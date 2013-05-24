@@ -167,8 +167,21 @@ try:
 	printer.setForeground()
 	printer.setBackground()
 
+	jsonExampleData = [];
+	jsonExampleData.append( {} );
+	jsonExampleData[ 0 ][ 'filesToPreload' ] = [];
+	jsonExampleData[ 0 ][ 'filesToPreload' ].append( { 'url': 'urlToItem1.jpg' } );
+	jsonExampleData[ 0 ][ 'filesToPreload' ].append( { 'url': 'urlToItem2.jpg' } );
 
-	cmdParser = OptionParser();
+	jsonExample = json.dumps( jsonExampleData, indent=4, separators=(',', ': ') )
+
+	printer.setForeground( printer.YELLOW )
+	usage =  ( "usage: %prog " + printer.getEscape() + "jsonInput" + printer.getReset() + " " + printer.getEscape() + "jsonOutput" + printer.getReset() + " " + printer.getEscape() + "jsonAssetPath" + printer.getReset() + " [options]\n"
+			   "\n\n" + printer.getEscape() + "jsonInput" + printer.getReset() + ":\nIs a path to a file that will be parsed for asset files eg. ./inputJSON.json"
+			   "\n\n" + printer.getEscape() + "jsonOutput" + printer.getReset() + ":\nIs the path that the preload information will be output into eg. ./outputJSON.json"
+			   "\n\n" + printer.getEscape() + "jsonAssetPath" + printer.getReset() + ":\nIs an array where input files could exist and is where the preloader data will be in the output. Array indices should be donated by the numeric index. eg. 0.filesToPreload (at index 0 variable filesToPreload) if your json looked like:\n" + jsonExample )
+
+	cmdParser = OptionParser(usage=usage);
 	cmdParser.add_option( "--cwd", dest="cwd", default="./", help="Base path for asset files", metavar="ASSET_FOLDER" )
 	cmdParser.add_option( "--urlTags", dest="urlTags", default="img,video,audio", help="Define json tag names for urls for assets using a comma separated list eg. img,video,audio" )
 	cmdParser.add_option( "-p", action="store_true", dest="parse", help="Adding this option in will make it so that the json will be parsed for images" )
