@@ -140,7 +140,8 @@ def getDataForJSONPath( jsonData, path ):
 
 		return rVal
 	except:
-		 print "Error while going through JSON:", sys.exc_info()[0]
+		 printer.setForeground( printer.RED )
+		 printer.out( 'YOUR JSON PATH MAYBE INCORRECT' )
 
 
 
@@ -282,7 +283,7 @@ try:
 		printer.setForeground( printer.RED )
 		printer.out( 'In order to run this script you must provide a JSON file that we will use' )
 
-except SystemExit:
+except(SystemExit, TypeError):
 	printer.outReset()
 
 except:
