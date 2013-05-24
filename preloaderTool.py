@@ -99,7 +99,7 @@ def lookForImg( data, listToAddTo, jsonTags ):
 		for key in data:			
 			for jsonTag in jsonTags:
 				if key == jsonTag and isinstance( data[ key ], unicode ):
-					listToAddTo.append( data[ key ] )
+					listToAddTo.append( { "url": data[ key ], "type": jsonTag } )
 				elif isinstance( data[ key ], list ) or isinstance( data[ key ], dict ):
 					lookForImg( data[ key ], listToAddTo, jsonTags )
 
@@ -134,9 +134,18 @@ def getDataForJSONPath( jsonData, path ):
 						else:
 							rVal[ pathPart ] = {}
 					else:
-						rVal[ pathPart ] = []
+						rVal[ pathPart ] = {}
 
 					rVal = rVal[ pathPart ]
+
+			# if we're on the last item we want to check if we have a retina 
+			# and regular load object
+			if i == length - 1:
+				if 'regular' not in rVal:
+					rVal[ 'regular' ] = []
+
+				if 'retina' not in rVal:
+					rVal[ 'retina' ] = []
 
 		return rVal
 	except:
@@ -221,53 +230,78 @@ try:
 			for nFile in allImgFromJSON:
 				found = False
 
-				for url in files:
-					if nFile == url[ 'url' ]:
+				for url in files[ 'regular' ]:
+					if nFile[ 'url' ] == url[ 'url' ]:
 						found = True
 						break
 
 				# since this file was not found we'll attempt to add it to the list
 				if found == False:
 					if options.interactiveParse == None:
-						files.append( { "url": nFile } )
+						files[ 'regular' ].append( nFile )
 					else:
 						printer.setForeground( printer.YELLOW )
 						yellow = printer.getEscape()
 						printer.setForeground( printer.CYAN )
 						printer.doBold = True
 						cyan = printer.getEscape()
-						yesNo = raw_input( 'Do you want to add the file ' + cyan + '\'' + nFile + '\'' + printer.getReset() + ' to preload json ' + yellow + '(y/n): ' )
+						yesNo = raw_input( 'Do you want to add the file ' + cyan + '\'' + nFile[ 'url' ] + '\'' + printer.getReset() + ' to preload json ' + yellow + '(y/n): ' )
 						sys.stdout.write( printer.getReset() )
 
 						if yesNo == 'y' or yesNo == 'yes':
-							files.append( { "url": nFile } )
+							files[ 'regular' ].append( nFile )
 				
 
 
 		# now figure out and add the percentages
 		totalBytes = 0
+		totalBytesRetina = 0
+		retinasFound = False
 
 		# we need to duplicate the list of files so if we remove an item we can continue iterating
-		filesToCheckOver = files[:]
+		filesToCheckOver = files[ 'regular' ][:]
+		files[ 'retina' ] = []
 
 		for cFile in filesToCheckOver:
+			regularExist = False
 			cURL = cFile[ 'url' ]
+			rURL = '@2x.'.join( cFile[ 'url' ].rsplit( '.', 1) )
+
+			print rURL
 
 			if os.path.exists( options.cwd + cURL ):
+				regularExist = True
 				cFile[ 'bytes' ] = os.path.getsize( options.cwd + cURL )
 				totalBytes += cFile[ 'bytes' ]
 			else:
 				printer.setForeground( printer.RED )
 				printer.out( 'THE FILE ' + cFile[ 'url' ] + ' DIDN\'T EXIST NOT ADDED TO PRELOAD JSON' )
-				files.remove( cFile )
+				files[ 'regular' ].remove( cFile )
+
+			# check if retina images exist
+			# this will obviously check for @2x for even audio and video
+			# but if the file doesnt exist then it wont be added and if regular does exist that
+			# will be added
+			if os.path.exists( options.cwd + rURL ):
+				retinasFound = True
+				retinaBytes = os.path.getsize( options.cwd + rURL )
+				files[ 'retina' ].append( { 'url': rURL, 'bytes': retinaBytes })
+				totalBytesRetina += retinaBytes
+			elif regularExist:
+				files[ 'retina' ].append( { 'url': cFile[ 'url' ], 'bytes': cFile[ 'bytes' ] })
+				totalBytesRetina += cFile[ 'bytes' ]
+
+
+
 
 		# print the info header
 		printer.setForeground( printer.YELLOW )
 		printer.out( '\n\n--- FILE INFO ---' )
 		printer.setForeground( printer.CYAN )
 		printer.out( 'Total bytes: ' + str( totalBytes ) + '\n' )
-
-		for cFile in files:
+		
+		# calculate percentages for non-retina load
+		for cFile in files[ 'regular' ]:
 			cFile[ 'percentage' ] = float( cFile[ 'bytes' ] ) / totalBytes
 
 			# print info about the file
@@ -276,6 +310,21 @@ try:
 
 			# remove bytes since we don't want it in the json
 			cFile.pop( 'bytes' )
+
+
+		# calculate percentages for retina load
+		printer.out( '\n\nTotal bytes retina: ' + str( totalBytesRetina ) + '\n' )
+
+		for cFile in files[ 'retina' ]:
+			cFile[ 'percentage' ] = float( cFile[ 'bytes' ] ) / totalBytes
+
+			# print info about the file
+			printer.setForeground( printer.CYAN )
+			printer.out( cFile[ 'url' ] + ' -- bytes: ' + str( cFile[ 'bytes' ] ) + ' percentage: ' + str( cFile[ 'percentage' ] ) )
+
+			# remove bytes since we don't want it in the json
+			cFile.pop( 'bytes' )
+
 
 
 
