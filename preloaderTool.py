@@ -170,7 +170,7 @@ try:
 
 	cmdParser = OptionParser();
 	cmdParser.add_option( "--cwd", dest="cwd", default="./", help="Base path for asset files", metavar="ASSET_FOLDER" )
-	cmdParser.add_option( "--urlTags", dest="urlTags", default="image,video,audio", help="Define json tag names for urls for assets using a comma separated list eg. image,video,audio" )
+	cmdParser.add_option( "--urlTags", dest="urlTags", default="img,video,audio", help="Define json tag names for urls for assets using a comma separated list eg. img,video,audio" )
 	cmdParser.add_option( "-p", action="store_true", dest="parse", help="Adding this option in will make it so that the json will be parsed for images" )
 	cmdParser.add_option( "-i", action="store_true", dest="interactiveParse", help="Use this option to interactively add items if we're parsing" )
 	cmdParser.add_option( "--pretty", action="store_true", dest="pretty", help="If you'd like the output to be pretty printed use this option" )
