@@ -99,7 +99,7 @@ def lookForImg( data, listToAddTo, jsonTags ):
 		for key in data:			
 			for jsonTag in jsonTags:
 				if key == jsonTag and isinstance( data[ key ], unicode ):
-					listToAddTo.append( { "url": data[ key ], "type": jsonTag } )
+					listToAddTo.append( { 'url': data[ key ], 'type': jsonTag } )
 				elif isinstance( data[ key ], list ) or isinstance( data[ key ], dict ):
 					lookForImg( data[ key ], listToAddTo, jsonTags )
 
@@ -285,10 +285,10 @@ try:
 			if os.path.exists( options.cwd + rURL ):
 				retinasFound = True
 				retinaBytes = os.path.getsize( options.cwd + rURL )
-				files[ 'retina' ].append( { 'url': rURL, 'bytes': retinaBytes })
+				files[ 'retina' ].append( { 'url': rURL, 'bytes': retinaBytes, 'type': cFile[ 'type' ] })
 				totalBytesRetina += retinaBytes
 			elif regularExist:
-				files[ 'retina' ].append( { 'url': cFile[ 'url' ], 'bytes': cFile[ 'bytes' ] })
+				files[ 'retina' ].append( { 'url': cFile[ 'url' ], 'bytes': cFile[ 'bytes' ], 'type': cFile[ 'type' ] })
 				totalBytesRetina += cFile[ 'bytes' ]
 
 
