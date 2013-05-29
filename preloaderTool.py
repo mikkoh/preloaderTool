@@ -107,7 +107,8 @@ def lookForImg( data, listToAddTo, jsonTags ):
 		for item in data:
 			lookForImg( item, listToAddTo, jsonTags )
 
-
+# this function will traverse the JSON file passed in to get the object created
+# if things in the path are not defined it will define it as it goes through
 def getDataForJSONPath( jsonData, path ):
 	try:
 		rVal = jsonData
@@ -124,6 +125,12 @@ def getDataForJSONPath( jsonData, path ):
 				# since it exists we continue to traverse as normal
 				if pathPart in rVal:
 					rVal = rVal[ pathPart ]
+
+					# if this is the last item and it's not a dictionary
+					# we need to make it into a dictionary
+					if i == length - 1:
+						rVal = rVal[ pathPart ] = {};
+
 				# since it doesnt exist we'll add it
 				else:
 					if i + 1 < length:
@@ -138,19 +145,47 @@ def getDataForJSONPath( jsonData, path ):
 
 					rVal = rVal[ pathPart ]
 
-			# if we're on the last item we want to check if we have a retina 
-			# and regular load object
-			if i == length - 1:
-				if 'regular' not in rVal:
-					rVal[ 'regular' ] = []
 
-				if 'retina' not in rVal:
-					rVal[ 'retina' ] = []
+		# now that we've traversed the path
+		# we need to make sure there is a regular
+		# and retina array on the final item
+		if 'regular' not in rVal:
+			rVal[ 'regular' ] = []
+
+		if 'retina' not in rVal:
+			rVal[ 'retina' ] = []
+
 
 		return rVal
 	except:
 		 printer.setForeground( printer.RED )
 		 printer.out( 'YOUR JSON PATH MAYBE INCORRECT' )
+
+
+# this function will create a command line parser
+def createCommandLineParser():
+	jsonExampleData = [];
+	jsonExampleData.append( {} );
+	jsonExampleData[ 0 ][ 'filesToPreload' ] = [];
+	jsonExampleData[ 0 ][ 'filesToPreload' ].append( { 'url': 'urlToItem1.jpg' } );
+	jsonExampleData[ 0 ][ 'filesToPreload' ].append( { 'url': 'urlToItem2.jpg' } );
+
+	jsonExample = json.dumps( jsonExampleData, indent=4, separators=(',', ': ') )
+
+	printer.setForeground( printer.YELLOW )
+	usage =  ( "usage: %prog " + printer.getEscape() + "jsonInput" + printer.getReset() + " " + printer.getEscape() + "jsonOutput" + printer.getReset() + " " + printer.getEscape() + "jsonAssetPath" + printer.getReset() + " [options]\n"
+			   "\n\n" + printer.getEscape() + "jsonInput" + printer.getReset() + ":\nIs a path to a file that will be parsed for asset files eg. ./inputJSON.json"
+			   "\n\n" + printer.getEscape() + "jsonOutput" + printer.getReset() + ":\nIs the path that the preload information will be output into eg. ./outputJSON.json"
+			   "\n\n" + printer.getEscape() + "jsonAssetPath" + printer.getReset() + ":\nIs an array where input files could exist and is where the preloader data will be in the output. Array indices should be donated by the numeric index. eg. 0.filesToPreload (at index 0 variable filesToPreload) if your json looked like:\n" + jsonExample )
+
+	cmdParser = OptionParser(usage=usage);
+	cmdParser.add_option( "--cwd", dest="cwd", default="./", help="Base path for asset files", metavar="ASSET_FOLDER" )
+	cmdParser.add_option( "--urlTags", dest="urlTags", default="img,video,audio", help="Define json tag names for urls for assets using a comma separated list eg. img,video,audio" )
+	cmdParser.add_option( "-p", action="store_true", dest="parse", help="Adding this option in will make it so that the json will be parsed for images" )
+	cmdParser.add_option( "-i", action="store_true", dest="interactiveParse", help="Use this option to interactively add items if we're parsing" )
+	cmdParser.add_option( "--pretty", action="store_true", dest="pretty", help="If you'd like the output to be pretty printed use this option" )
+
+	return cmdParser
 
 
 
@@ -176,28 +211,8 @@ try:
 	printer.setForeground()
 	printer.setBackground()
 
-	jsonExampleData = [];
-	jsonExampleData.append( {} );
-	jsonExampleData[ 0 ][ 'filesToPreload' ] = [];
-	jsonExampleData[ 0 ][ 'filesToPreload' ].append( { 'url': 'urlToItem1.jpg' } );
-	jsonExampleData[ 0 ][ 'filesToPreload' ].append( { 'url': 'urlToItem2.jpg' } );
-
-	jsonExample = json.dumps( jsonExampleData, indent=4, separators=(',', ': ') )
-
-	printer.setForeground( printer.YELLOW )
-	usage =  ( "usage: %prog " + printer.getEscape() + "jsonInput" + printer.getReset() + " " + printer.getEscape() + "jsonOutput" + printer.getReset() + " " + printer.getEscape() + "jsonAssetPath" + printer.getReset() + " [options]\n"
-			   "\n\n" + printer.getEscape() + "jsonInput" + printer.getReset() + ":\nIs a path to a file that will be parsed for asset files eg. ./inputJSON.json"
-			   "\n\n" + printer.getEscape() + "jsonOutput" + printer.getReset() + ":\nIs the path that the preload information will be output into eg. ./outputJSON.json"
-			   "\n\n" + printer.getEscape() + "jsonAssetPath" + printer.getReset() + ":\nIs an array where input files could exist and is where the preloader data will be in the output. Array indices should be donated by the numeric index. eg. 0.filesToPreload (at index 0 variable filesToPreload) if your json looked like:\n" + jsonExample )
-
-	cmdParser = OptionParser(usage=usage);
-	cmdParser.add_option( "--cwd", dest="cwd", default="./", help="Base path for asset files", metavar="ASSET_FOLDER" )
-	cmdParser.add_option( "--urlTags", dest="urlTags", default="img,video,audio", help="Define json tag names for urls for assets using a comma separated list eg. img,video,audio" )
-	cmdParser.add_option( "-p", action="store_true", dest="parse", help="Adding this option in will make it so that the json will be parsed for images" )
-	cmdParser.add_option( "-i", action="store_true", dest="interactiveParse", help="Use this option to interactively add items if we're parsing" )
-	cmdParser.add_option( "--pretty", action="store_true", dest="pretty", help="If you'd like the output to be pretty printed use this option" )
-
-	(options, args) = cmdParser.parse_args()
+	# get the command line arguments
+	(options, args) = createCommandLineParser().parse_args()
 
 
 	# this is where all the magic will start to happen
